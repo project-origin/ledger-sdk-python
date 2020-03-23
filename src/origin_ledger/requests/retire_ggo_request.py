@@ -9,23 +9,10 @@ from sawtooth_sdk.protobuf.transaction_pb2 import Transaction
 from .abstract_request import AbstractRequest
 from .helpers import get_signer, generate_address, AddressPrefix
 
-
-
-
-@dataclass
-class LedgerRetireGGORequest:
-    settlement_address: str = field()
-
-@dataclass
-class LedgerSettlementRequest:
-    measurement_address: str = field()
-    settlement_address: str = field()
-    ggo_addresses: List[str] = field()
-
+from ..ledger_dto.requests import LedgerRetireGGORequest, LedgerSettlementRequest
 
 retire_ggo_schema = marshmallow_dataclass.class_schema(LedgerRetireGGORequest)
 settlement_schema = marshmallow_dataclass.class_schema(LedgerSettlementRequest)
-
 
 @dataclass
 class RetireGGORequest(AbstractRequest):

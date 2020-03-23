@@ -1,7 +1,6 @@
 
 
 from datetime import datetime
-from enum import Enum
 from .abstract_request import AbstractRequest
 from sawtooth_sdk.protobuf.transaction_pb2 import Transaction
 from bip32utils import BIP32Key
@@ -12,20 +11,8 @@ import marshmallow_dataclass
 
 from .helpers import generate_address, AddressPrefix
 
-
-class Direction(Enum):
-    CONSUMPTION = 'CONSUMPTION'
-    PRODUCTION = 'PRODUCTION'
-
-
-@dataclass
-class LedgerPublishMeasurementRequest:
-    begin: datetime = field()   
-    end: datetime = field()
-    sector: str = field()
-    direction: Direction = field()
-    amount: int = field()
-    key: str = field()
+from ..ledger_dto.requests import LedgerPublishMeasurementRequest
+from ..ledger_dto import MeasurementType
 
 measurement_schema = marshmallow_dataclass.class_schema(LedgerPublishMeasurementRequest)
 
@@ -36,7 +23,7 @@ class PublishMeasurementRequest(AbstractRequest):
     begin: datetime = field()
     end: datetime = field()
     sector: str = field()
-    direction: Direction = field()
+    type: MeasurementType = field()
     amount: int = field()
     
 
@@ -49,7 +36,7 @@ class PublishMeasurementRequest(AbstractRequest):
             end=self.end,
             sector=self.sector,
             amount=self.amount,
-            direction=self.direction,
+            type=self.type,
             key=self.extended_key.PublicKey().hex()
             )    
 

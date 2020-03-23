@@ -10,17 +10,7 @@ from sawtooth_sdk.protobuf.transaction_pb2 import Transaction
 from .abstract_request import AbstractRequest
 from .helpers import get_signer, generate_address, AddressPrefix
 
-
-
-@dataclass
-class LedgerSplitGGOPart:
-    address: str = field()
-    amount: int = field()
-    key: str = field()
-
-@dataclass
-class LedgerSplitGGORequest:
-    parts: List[LedgerSplitGGOPart] = field()
+from ..ledger_dto.requests import LedgerSplitGGOPart, LedgerSplitGGORequest
 
 split_ggo_schema = marshmallow_dataclass.class_schema(LedgerSplitGGORequest)
 

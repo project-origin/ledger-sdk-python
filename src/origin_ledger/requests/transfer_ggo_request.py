@@ -9,9 +9,7 @@ from dataclasses import dataclass, field
 import marshmallow_dataclass
 from .helpers import get_signer, generate_address, AddressPrefix
 
-@dataclass
-class LedgerTransferGGORequest:
-    key: str = field()
+from ..ledger_dto.requests import LedgerTransferGGORequest
 
 transfer_ggo_schema = marshmallow_dataclass.class_schema(LedgerTransferGGORequest)
 

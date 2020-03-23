@@ -10,14 +10,7 @@ from typing import List
 from .abstract_request import AbstractRequest
 from .helpers import generate_address, AddressPrefix
 
-
-@dataclass
-class LedgerIssueGGORequest:
-    origin: str = field()
-    tech_type: str = field()
-    fuel_type: str = field()
-    key: str = field()
-
+from ..ledger_dto.requests import LedgerIssueGGORequest
 issue_ggo_schema = marshmallow_dataclass.class_schema(LedgerIssueGGORequest)
 
 

@@ -7,10 +7,13 @@ from bip32utils import BIP32Key
 from typing import List #, Optional
 from dataclasses import dataclass, field
 from sawtooth_sdk.protobuf.batch_pb2 import BatchList
+from marshmallow_dataclass import class_schema
 
 from .batch import Batch, BatchStatus
-from .models import Measurement, GGO, measurement_schema, ggo_schema
+from .ledger_dto import Measurement, GGO
 from .requests import generate_address, AddressPrefix
+
+
 
 
 @dataclass
@@ -44,6 +47,8 @@ class StateResponse():
 handle_schema = marshmallow_dataclass.class_schema(Handle)
 batch_status_schema = marshmallow_dataclass.class_schema(BatchStatusResponse)
 state_response_schema = marshmallow_dataclass.class_schema(StateResponse)
+measurement_schema = class_schema(Measurement)
+ggo_schema = class_schema(GGO)
 
 
 class Ledger():
@@ -107,23 +112,3 @@ class Ledger():
         ggo.address = address
 
         return ggo
-
-
-        
-
-
-        
-
-
-
-    # def get_measurement_from_key(extended_key: BIP32Key) -> Measurement:
-    #     address = generate_address('MEASUREMENT', extended_key)
-    #     return get_measurement_from_address(address)
-
-
-    # def get_measurement_from_address(address: str) -> Measurement:
-
-    #     byte_obj = self._get_state(address)
-    #     measurement = measurement_schema().loads(b64decode(byte_obj))
-
-    #     return measurement

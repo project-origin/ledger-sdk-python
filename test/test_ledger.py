@@ -9,7 +9,7 @@ from bip32utils import BIP32Key
 
 from sawtooth_signing import create_context
 
-from src.ledger import Ledger, Batch, PublishMeasurementRequest, MeasurementDirection, BatchStatus, IssueGGORequest #, TransferGGORequest, SplitGGOPart, SplitGGORequest
+from src.origin_ledger import Ledger, Batch, PublishMeasurementRequest, MeasurementType, BatchStatus, IssueGGORequest #, TransferGGORequest, SplitGGOPart, SplitGGORequest
 
 
 def randomString(stringLength=32):
@@ -18,7 +18,7 @@ def randomString(stringLength=32):
     return ''.join(random.choice(letters) for i in range(stringLength))
 
 
-from src.ledger.requests.helpers import get_signer
+from src.origin_ledger.requests.helpers import get_signer
 
 class TestLedger(unittest.TestCase):
 
@@ -42,15 +42,15 @@ class TestLedger(unittest.TestCase):
     def test_ledger_get_measurement(self):
 
 
-        measurement = self.ledger.get_measurement_from_address('5a98391d0968501bedc7539d79b6084a7c3b2e2a0eea63989383b3f312f3973174a078')
+        measurement = self.ledger.get_measurement_from_address('5a983961ff7eec99ace9c9cdb558e2f79e013c5f4bb31be0ad768f7d361b4fe3546720')
 
-        self.assertEqual(measurement.address, '5a98391d0968501bedc7539d79b6084a7c3b2e2a0eea63989383b3f312f3973174a078')
+        self.assertEqual(measurement.address, '5a983961ff7eec99ace9c9cdb558e2f79e013c5f4bb31be0ad768f7d361b4fe3546720')
         self.assertEqual(measurement.amount, 5123)
         self.assertEqual(measurement.sector, 'DK1')
-        self.assertEqual(measurement.direction, MeasurementDirection.CONSUMPTION)
+        self.assertEqual(measurement.type, MeasurementType.CONSUMPTION)
         self.assertEqual(measurement.begin, datetime(2020,1,1,12, tzinfo=timezone.utc))
         self.assertEqual(measurement.end,  datetime(2020,1,1,13, tzinfo=timezone.utc))
-        self.assertEqual(measurement.key, '03c50162209fda62f0bfee5c4a5e18a156db331810ee5ff8ddc35cbfb89cb18c93')
+        self.assertEqual(measurement.key, '033bf7ae09fb21ff1430a5b91ffc645318001806f4a2e4c4195346548da46f9a5f')
 
 
     def test_publish_and_read_measurement(self):
@@ -65,7 +65,7 @@ class TestLedger(unittest.TestCase):
             begin=datetime(2020, 1, 1, 12, 0, tzinfo=timezone.utc),
             end=datetime(2020, 1, 1, 13, 0, tzinfo=timezone.utc),
             sector='DK1',
-            direction=MeasurementDirection.CONSUMPTION,
+            type=MeasurementType.CONSUMPTION,
             amount=5123))
 
         batch.add_request(IssueGGORequest(
@@ -89,7 +89,7 @@ class TestLedger(unittest.TestCase):
         self.assertEqual(measurement.begin, datetime(2020, 1, 1, 12, 0, tzinfo=timezone.utc))
         self.assertEqual(measurement.end, datetime(2020, 1, 1, 13, 0, tzinfo=timezone.utc))
         self.assertEqual(measurement.sector, 'DK1')
-        self.assertEqual(measurement.direction, MeasurementDirection.CONSUMPTION)
+        self.assertEqual(measurement.type, MeasurementType.CONSUMPTION)
         self.assertEqual(measurement.amount, 5123)
         self.assertEqual(measurement.key, child_key.PublicKey().hex())
 
