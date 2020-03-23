@@ -1,0 +1,20 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+pytest = "*"
+bip32utils = "*"
+requests = "*"
+sawtooth-sdk = "*"
+marshmallow-dataclass = "*"
+marshmallow-enum = "*"
+pytest-cov = "*"
+pylint = "*"
+rope = "*"
+
+[requires]
+python_version = "3.7"
