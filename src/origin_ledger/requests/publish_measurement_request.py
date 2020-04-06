@@ -11,7 +11,7 @@ import marshmallow_dataclass
 
 from .helpers import generate_address, AddressPrefix
 
-from ..ledger_dto.requests import LedgerPublishMeasurementRequest
+from ..ledger_dto.requests import PublishMeasurementRequest as LedgerPublishMeasurementRequest
 from ..ledger_dto import MeasurementType
 
 measurement_schema = marshmallow_dataclass.class_schema(LedgerPublishMeasurementRequest)
@@ -48,6 +48,6 @@ class PublishMeasurementRequest(AbstractRequest):
             bytez,
             inputs=[address],
             outputs=[address], 
-            family_name='datahub',
+            family_name=LedgerPublishMeasurementRequest.__name__,
             family_version='0.1')] 
 

@@ -9,7 +9,7 @@ from bip32utils import BIP32Key
 
 from sawtooth_signing import create_context
 
-from src.origin_ledger import Ledger, Batch, PublishMeasurementRequest, MeasurementType, BatchStatus, IssueGGORequest #, TransferGGORequest, SplitGGOPart, SplitGGORequest
+from src.origin_ledger import Ledger, Batch, BatchStatus, PublishMeasurementRequest, MeasurementType,IssueGGORequest, TransferGGORequest, SplitGGOPart, SplitGGORequest, RetireGGORequest
 
 
 def randomString(stringLength=32):
@@ -39,97 +39,74 @@ class TestLedger(unittest.TestCase):
         self.assertEqual(result, True)
         
 
-    def test_ledger_get_measurement(self):
+    def test_build_publish_measurement_request(self):
+        key = BIP32Key.fromEntropy("bfdgafgaertaehtaha43514r<aefag".encode())
 
-
-        measurement = self.ledger.get_measurement_from_address('5a983961ff7eec99ace9c9cdb558e2f79e013c5f4bb31be0ad768f7d361b4fe3546720')
-
-        self.assertEqual(measurement.address, '5a983961ff7eec99ace9c9cdb558e2f79e013c5f4bb31be0ad768f7d361b4fe3546720')
-        self.assertEqual(measurement.amount, 5123)
-        self.assertEqual(measurement.sector, 'DK1')
-        self.assertEqual(measurement.type, MeasurementType.CONSUMPTION)
-        self.assertEqual(measurement.begin, datetime(2020,1,1,12, tzinfo=timezone.utc))
-        self.assertEqual(measurement.end,  datetime(2020,1,1,13, tzinfo=timezone.utc))
-        self.assertEqual(measurement.key, '033bf7ae09fb21ff1430a5b91ffc645318001806f4a2e4c4195346548da46f9a5f')
-
-
-    def test_publish_and_read_measurement(self):
-
-        key = BIP32Key.fromEntropy(randomString().encode())
-        child_key = key.CKDpub(1)
-        
-        batch = Batch(key)
-
-        batch.add_request(PublishMeasurementRequest(
-            extended_key=child_key,
-            begin=datetime(2020, 1, 1, 12, 0, tzinfo=timezone.utc),
-            end=datetime(2020, 1, 1, 13, 0, tzinfo=timezone.utc),
+        request = PublishMeasurementRequest(
+            extended_key=key,
+            begin=datetime(2020,1,1,12),
+            end=datetime(2020,1,1,12),
             sector='DK1',
-            type=MeasurementType.CONSUMPTION,
-            amount=5123))
+            type=MeasurementType.PRODUCTION,
+            amount=1244
+        )
 
-        batch.add_request(IssueGGORequest(
-            extended_key=child_key,
-            tech_type="T0124",
-            fuel_type="F2345"))
-
-        handle = self.ledger.execute_batch(batch)
-
-        print(handle)
-        status = BatchStatus.PENDING
-        while status == BatchStatus.PENDING:
-            batch_status = self.ledger.get_batch_status(handle)
-            status = batch_status.data[0].status
-
-        self.assertEqual(status, BatchStatus.COMMITTED)
-
-        # Try to get the committed measurement
-        measurement = self.ledger.get_measurement_from_key(child_key)
-
-        self.assertEqual(measurement.begin, datetime(2020, 1, 1, 12, 0, tzinfo=timezone.utc))
-        self.assertEqual(measurement.end, datetime(2020, 1, 1, 13, 0, tzinfo=timezone.utc))
-        self.assertEqual(measurement.sector, 'DK1')
-        self.assertEqual(measurement.type, MeasurementType.CONSUMPTION)
-        self.assertEqual(measurement.amount, 5123)
-        self.assertEqual(measurement.key, child_key.PublicKey().hex())
-
-
-    # A lot more tests are still required.
-
-    # def test_issue_ggo(self):
-    #     key = BIP32Key.fromEntropy(randomString().encode())
-    #     child_key = key.CKDpub(1)
-
-
-    #     handle = publish_measurement(
-    #         child_key,
-    #         begin=datetime(2020, 1, 1, 12, 0, tzinfo=timezone.utc),
-    #         end=datetime(2020, 1, 1, 13, 0, tzinfo=timezone.utc),
-    #         sector='DK1',
-    #         direction=Direction.PRODUCTION,
-    #         amount=123)
-
-    #     print(handle)
-    #     status = Status.PENDING
-    #     while status == Status.PENDING:
-    #         status = get_status(handle)
-
-    #     self.assertEqual(status, Status.COMMITTED)
-
-    #     handle = issue_ggo(
-    #         child_key, 
-    #         'T020002',
-    #         'F01050100')
-            
-    #     status = Status.PENDING
-    #     while status == Status.PENDING:
-    #         status = get_status(handle)
-
-    #     self.assertEqual(status, Status.COMMITTED)
-
-
+        batch = Batch(signer_key=key)
+        batch.add_request(request)
+        batch.get_signed_batch()
 
         
+    def test_build_issue_ggo_request(self):
+        key = BIP32Key.fromEntropy("bfdgafgaertaehtaha43514r<aefag".encode())
+        
+        request = IssueGGORequest(
+            extended_key=key,
+            tech_type="T12412",
+            fuel_type="F123123"
+        )
 
+        batch = Batch(signer_key=key)
+        batch.add_request(request)
+        batch.get_signed_batch()
 
+       
+    def test_build_transfer_ggo_request(self):
+        key = BIP32Key.fromEntropy("bfdgafgaertaehtaha43514r<aefag".encode())
+    
+        request = TransferGGORequest(
+            current_key=key.ChildKey(1),
+            new_key=key.ChildKey(2),
+        )
 
+        batch = Batch(signer_key=key)
+        batch.add_request(request)
+        batch.get_signed_batch()
+
+        
+    def test_build_split_ggo_request(self):
+        key = BIP32Key.fromEntropy("bfdgafgaertaehtaha43514r<aefag".encode())
+  
+        request = SplitGGORequest(
+            current_key=key.ChildKey(1),
+            parts=[
+                SplitGGOPart(key=key.ChildKey(2), amount=124),
+                SplitGGOPart(key=key.ChildKey(3), amount=124)
+            ]
+        )
+
+        batch = Batch(signer_key=key)
+        batch.add_request(request)
+        batch.get_signed_batch()
+
+               
+    def test_build_retire_ggo_request(self):
+        key = BIP32Key.fromEntropy("bfdgafgaertaehtaha43514r<aefag".encode())
+  
+        request = RetireGGORequest(
+            measurement_key=key.ChildKey(1),
+            ggo_keys=[key.ChildKey(2), key.ChildKey(3)]
+        )
+
+        batch = Batch(signer_key=key)
+        batch.add_request(request)
+        batch.get_signed_batch()

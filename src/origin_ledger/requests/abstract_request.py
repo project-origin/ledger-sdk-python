@@ -9,7 +9,7 @@ class AbstractRequest(ABC):
 
     @abstractmethod
     def get_signed_transactions(self, batch_signer) -> List[Transaction]:
-        pass
+         raise NotImplementedError
 
 
     def sign_transaction(self,
@@ -46,4 +46,3 @@ class AbstractRequest(ABC):
  
     def _to_bytes(self, schema, obj):
         return schema().dumps(obj=obj).encode('utf8')
-    

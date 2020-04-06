@@ -10,7 +10,8 @@ from sawtooth_sdk.protobuf.transaction_pb2 import Transaction
 from .abstract_request import AbstractRequest
 from .helpers import get_signer, generate_address, AddressPrefix
 
-from ..ledger_dto.requests import LedgerSplitGGOPart, LedgerSplitGGORequest
+from ..ledger_dto.requests import SplitGGORequest as LedgerSplitGGORequest
+from ..ledger_dto.requests import SplitGGOPart as LedgerSplitGGOPart
 
 split_ggo_schema = marshmallow_dataclass.class_schema(LedgerSplitGGORequest)
 
@@ -44,7 +45,9 @@ class SplitGGORequest(AbstractRequest):
             addresses.append(part_address)
             parts.append(ggo_part)
             
-        request = LedgerSplitGGORequest(parts=parts)
+        request = LedgerSplitGGORequest(
+            origin=ggo_address,
+            parts=parts)
 
         byte_obj = self._to_bytes(split_ggo_schema, request)
 
@@ -54,5 +57,5 @@ class SplitGGORequest(AbstractRequest):
             byte_obj,
             inputs=addresses,
             outputs=addresses,
-            family_name='datahub',
+            family_name=LedgerSplitGGORequest.__name__,
             family_version='0.1')]

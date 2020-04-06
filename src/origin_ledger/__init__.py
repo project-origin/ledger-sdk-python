@@ -1,6 +1,6 @@
 
 
-from .requests import PublishMeasurementRequest, IssueGGORequest, SplitGGOPart, SplitGGORequest, TransferGGORequest
+from .requests import PublishMeasurementRequest, IssueGGORequest, SplitGGOPart, SplitGGORequest, TransferGGORequest, RetireGGORequest
 
 from .batch import Batch, BatchStatus
 from .ledger_connector import Ledger

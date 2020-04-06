@@ -10,7 +10,7 @@ from typing import List
 from .abstract_request import AbstractRequest
 from .helpers import generate_address, AddressPrefix
 
-from ..ledger_dto.requests import LedgerIssueGGORequest
+from ..ledger_dto.requests import IssueGGORequest as LedgerIssueGGORequest
 issue_ggo_schema = marshmallow_dataclass.class_schema(LedgerIssueGGORequest)
 
 
@@ -18,7 +18,7 @@ issue_ggo_schema = marshmallow_dataclass.class_schema(LedgerIssueGGORequest)
 class IssueGGORequest(AbstractRequest):
     extended_key: BIP32Key = field()
     tech_type: str = field()
-    fuel_type: int = field()
+    fuel_type: str = field()
 
     def get_signed_transactions(self, batch_signer) -> List[Transaction]:
 
@@ -27,13 +27,12 @@ class IssueGGORequest(AbstractRequest):
 
         request = LedgerIssueGGORequest(
             origin=measurement_address,
+            destination=ggo_address,
             tech_type=self.tech_type,
             fuel_type=self.fuel_type,
             key=self.extended_key.PublicKey().hex())
 
         byte_obj = self._to_bytes(issue_ggo_schema, request)
-
-        
 
         return [self.sign_transaction(
             batch_signer,
@@ -41,5 +40,5 @@ class IssueGGORequest(AbstractRequest):
             byte_obj,
             inputs=[measurement_address, ggo_address],
             outputs=[ggo_address],
-            family_name='datahub',
+            family_name=LedgerIssueGGORequest.__name__,
             family_version='0.1')]

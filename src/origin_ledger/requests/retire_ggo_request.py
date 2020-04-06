@@ -9,10 +9,12 @@ from sawtooth_sdk.protobuf.transaction_pb2 import Transaction
 from .abstract_request import AbstractRequest
 from .helpers import get_signer, generate_address, AddressPrefix
 
-from ..ledger_dto.requests import LedgerRetireGGORequest, LedgerSettlementRequest
+from ..ledger_dto.requests import RetireGGORequest as LedgerRetireGGORequest
+from ..ledger_dto.requests import SignedRetireGGOPart as LedgerSignedRetireGGOPart
+from ..ledger_dto.requests import RetireGGOPart as LedgerRetireGGOPart
 
 retire_ggo_schema = marshmallow_dataclass.class_schema(LedgerRetireGGORequest)
-settlement_schema = marshmallow_dataclass.class_schema(LedgerSettlementRequest)
+signed_ggo_schema = marshmallow_dataclass.class_schema(LedgerSignedRetireGGOPart)
 
 @dataclass
 class RetireGGORequest(AbstractRequest):
@@ -25,36 +27,34 @@ class RetireGGORequest(AbstractRequest):
         measurement_address = generate_address(AddressPrefix.MEASUREMENT, self.measurement_key)
         
         addresses = [settlement_address, measurement_address]
-        signed_transactions = []
+        parts = []
 
         for ggo_key in self.ggo_keys:
             ggo_address = generate_address(AddressPrefix.GGO, ggo_key)
             addresses.append(ggo_address)
 
-            ggo_signer = get_signer(self.ggo_key)
+            ggo_signer = get_signer(ggo_key)
 
-            request = LedgerRetireGGORequest(settlement_address)
-            byte_obj = self._to_bytes(retire_ggo_schema, request)
+            request = LedgerRetireGGOPart(
+                origin=ggo_address,
+                settlement_address=settlement_address
+            )
+            message = signed_ggo_schema().dumps(request).encode('utf8')
+            
+            parts.append(LedgerSignedRetireGGOPart(
+                content=request,
+                signature=ggo_signer.sign(message)
+            ))
 
-            signed_transaction = self.sign_transaction(
-                batch_signer=batch_signer,
-                transaction_signer=ggo_signer,
-                payload_bytes=byte_obj,
-                inputs=[ggo_address],
-                outputs=[ggo_address],
-                family_name='datahub',
-                family_version='0.1')
-
-            signed_transactions.append(signed_transaction)
-
-        request = LedgerSettlementRequest(
+        request = LedgerRetireGGORequest(
             measurement_address=measurement_address,
             settlement_address=settlement_address,
-            ggo_addresses=addresses
+            key=self.measurement_key.PublicKey().hex(),
+            parts=parts
         )
 
         transaction_signer = get_signer(self.measurement_key)
-        byte_obj = self._to_bytes(settlement_schema, request)
+        byte_obj = self._to_bytes(retire_ggo_schema, request)
 
         signed_transaction = self.sign_transaction(
             batch_signer=batch_signer,
@@ -62,11 +62,9 @@ class RetireGGORequest(AbstractRequest):
             payload_bytes=byte_obj,
             inputs=addresses,
             outputs=[settlement_address],
-            family_name='datahub',
+            family_name=LedgerRetireGGORequest.__name__,
             family_version='0.1')
 
-        signed_transactions.append(signed_transaction)
-        
-        return signed_transactions
+        return [signed_transaction]
 
 

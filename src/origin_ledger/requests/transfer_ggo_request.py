@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 import marshmallow_dataclass
 from .helpers import get_signer, generate_address, AddressPrefix
 
-from ..ledger_dto.requests import LedgerTransferGGORequest
+from ..ledger_dto.requests import TransferGGORequest as LedgerTransferGGORequest
 
 transfer_ggo_schema = marshmallow_dataclass.class_schema(LedgerTransferGGORequest)
 
@@ -25,6 +25,8 @@ class TransferGGORequest(AbstractRequest):
         new_address = generate_address(AddressPrefix.MEASUREMENT, self.new_key)
 
         request = LedgerTransferGGORequest(
+            origin=ggo_address,
+            destination=new_address,
             key=self.new_key.PublicKey().hex()
         )
 
@@ -36,5 +38,5 @@ class TransferGGORequest(AbstractRequest):
             byte_obj,
             inputs=[ggo_address, new_address],
             outputs=[ggo_address, new_address],
-            family_name='datahub',
+            family_name=LedgerTransferGGORequest.__name__,
             family_version='0.1')]  
