@@ -9,7 +9,7 @@ class AbstractRequest(ABC):
 
     @abstractmethod
     def get_signed_transactions(self, batch_signer) -> List[Transaction]:
-         raise NotImplementedError
+        raise NotImplementedError
 
 
     def sign_transaction(self,
