@@ -14,16 +14,16 @@ from .ledger_dto import Measurement, GGO
 from .requests import generate_address, AddressPrefix
 
 
-
-
 @dataclass
 class Handle():
     link: str = field()
+
 
 @dataclass
 class Paging():
     limit: int = field()
     start: int = field()
+
 
 @dataclass
 class BatchStatusResponseData():
@@ -31,17 +31,18 @@ class BatchStatusResponseData():
     invalid_transactions: List[str] = field()
     status: BatchStatus = field()
 
+
 @dataclass
 class BatchStatusResponse():
     data: List[BatchStatusResponseData] = field()
     link: str = field()
+
 
 @dataclass
 class StateResponse():
     data: str = field()
     head: str = field()
     link: str = field()
-
 
 
 handle_schema = marshmallow_dataclass.class_schema(Handle)
@@ -63,6 +64,9 @@ class Ledger():
 
     def get_batch_status(self, handle: Handle) -> BatchStatusResponse:
         response = requests.get(handle.link)
+
+        print("\nRESPONSE:", response.content, "\n\n")
+
         return batch_status_schema().loads(response.content)
 
 
@@ -89,6 +93,7 @@ class Ledger():
         address = generate_address(AddressPrefix.MEASUREMENT, key)
         return self.get_measurement_from_address(address)
 
+
     def get_measurement_from_address(self, address: str) -> Measurement:
         response = self._get_state(address)
         
@@ -99,9 +104,11 @@ class Ledger():
 
         return measurement
 
+
     def get_ggo_from_key(self, key: BIP32Key) -> GGO:
         address = generate_address(AddressPrefix.GGO, key)
         return self.get_ggo_from_address(address)
+
 
     def get_ggo_from_address(self, address: str) -> GGO:
         response = self._get_state(address)

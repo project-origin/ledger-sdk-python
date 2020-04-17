@@ -1,6 +1,6 @@
 
-
 import unittest
+import pytest
 import random
 import string
 
@@ -9,7 +9,7 @@ from bip32utils import BIP32Key
 
 from sawtooth_signing import create_context
 
-from src.origin_ledger_sdk import Ledger, Batch, PublishMeasurementRequest, MeasurementType,IssueGGORequest, TransferGGORequest, SplitGGOPart, SplitGGORequest, RetireGGORequest
+from src.origin_ledger_sdk import Batch, PublishMeasurementRequest, MeasurementType,IssueGGORequest, TransferGGORequest, SplitGGOPart, SplitGGORequest, RetireGGORequest
 
 
 def randomString(stringLength=32):
@@ -22,10 +22,8 @@ from src.origin_ledger_sdk.requests.helpers import get_signer
 
 class TestLedger(unittest.TestCase):
 
-    def setUp(self):
-        self.ledger = Ledger('http://localhost:8008')
 
-
+    @pytest.mark.unittest
     def test_sign_with_bip32(self):
         context = create_context('secp256k1')
 
@@ -39,11 +37,12 @@ class TestLedger(unittest.TestCase):
         self.assertEqual(result, True)
         
 
+    @pytest.mark.unittest
     def test_build_publish_measurement_request(self):
         key = BIP32Key.fromEntropy("bfdgafgaertaehtaha43514r<aefag".encode())
 
         request = PublishMeasurementRequest(
-            extended_key=key,
+            owner_key=key,
             begin=datetime(2020,1,1,12),
             end=datetime(2020,1,1,12),
             sector='DK1',
@@ -56,11 +55,12 @@ class TestLedger(unittest.TestCase):
         batch.get_signed_batch()
 
         
+    @pytest.mark.unittest
     def test_build_issue_ggo_request(self):
         key = BIP32Key.fromEntropy("bfdgafgaertaehtaha43514r<aefag".encode())
         
         request = IssueGGORequest(
-            extended_key=key,
+            owner_key=key,
             tech_type="T12412",
             fuel_type="F123123"
         )
@@ -70,6 +70,7 @@ class TestLedger(unittest.TestCase):
         batch.get_signed_batch()
 
        
+    @pytest.mark.unittest
     def test_build_transfer_ggo_request(self):
         owner_key = BIP32Key.fromEntropy("bfdgafgaertaehtaha43514r<aefag".encode())
         receipent_key = BIP32Key.fromEntropy("bfasdfasdfasdgasdgasdgqwerhrjnr".encode())
@@ -84,6 +85,7 @@ class TestLedger(unittest.TestCase):
         batch.get_signed_batch()
 
         
+    @pytest.mark.unittest
     def test_build_split_ggo_request(self):
         key = BIP32Key.fromEntropy("bfdgafgaertaehtaha43514r<aefag".encode())
   
@@ -100,6 +102,7 @@ class TestLedger(unittest.TestCase):
         batch.get_signed_batch()
 
                
+    @pytest.mark.unittest
     def test_build_retire_ggo_request(self):
         key = BIP32Key.fromEntropy("bfdgafgaertaehtaha43514r<aefag".encode())
   

@@ -16,21 +16,21 @@ issue_ggo_schema = marshmallow_dataclass.class_schema(LedgerIssueGGORequest)
 
 @dataclass
 class IssueGGORequest(AbstractRequest):
-    extended_key: BIP32Key = field()
+    owner_key: BIP32Key = field()
     tech_type: str = field()
     fuel_type: str = field()
 
     def get_signed_transactions(self, batch_signer) -> List[Transaction]:
 
-        ggo_address = generate_address(AddressPrefix.GGO, self.extended_key)
-        measurement_address = generate_address(AddressPrefix.MEASUREMENT, self.extended_key)
+        ggo_address = generate_address(AddressPrefix.GGO, self.owner_key)
+        measurement_address = generate_address(AddressPrefix.MEASUREMENT, self.owner_key)
 
         request = LedgerIssueGGORequest(
             origin=measurement_address,
             destination=ggo_address,
             tech_type=self.tech_type,
             fuel_type=self.fuel_type,
-            key=self.extended_key.PublicKey().hex())
+            key=self.owner_key.PublicKey().hex())
 
         byte_obj = self._to_bytes(issue_ggo_schema, request)
 

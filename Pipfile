@@ -15,6 +15,7 @@ marshmallow-enum = "*"
 pytest-cov = "*"
 pylint = "*"
 rope = "*"
+testcontainers = "*"
 
 [requires]
 python_version = "3.7"

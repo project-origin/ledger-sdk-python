@@ -23,15 +23,18 @@ class RetireGGORequest(AbstractRequest):
 
     def get_signed_transactions(self, batch_signer) -> List[Transaction]:
 
-        settlement_address = generate_address(AddressPrefix.GGO, self.measurement_key)
+        settlement_address = generate_address(AddressPrefix.SETTLEMENT, self.measurement_key)
         measurement_address = generate_address(AddressPrefix.MEASUREMENT, self.measurement_key)
         
-        addresses = [settlement_address, measurement_address]
+        input_add = [settlement_address, measurement_address]
+        output_add = [settlement_address]
+
         parts = []
 
         for ggo_key in self.ggo_keys:
             ggo_address = generate_address(AddressPrefix.GGO, ggo_key)
-            addresses.append(ggo_address)
+            input_add.append(ggo_address)
+            output_add.append(ggo_address)
 
             ggo_signer = get_signer(ggo_key)
 
@@ -39,7 +42,7 @@ class RetireGGORequest(AbstractRequest):
                 origin=ggo_address,
                 settlement_address=settlement_address
             )
-            message = signed_ggo_schema().dumps(request).encode('utf8')
+            message = request.get_signature_bytes()
             
             parts.append(LedgerSignedRetireGGOPart(
                 content=request,
@@ -60,8 +63,8 @@ class RetireGGORequest(AbstractRequest):
             batch_signer=batch_signer,
             transaction_signer=transaction_signer,
             payload_bytes=byte_obj,
-            inputs=addresses,
-            outputs=[settlement_address],
+            inputs=input_add,
+            outputs=output_add,
             family_name=LedgerRetireGGORequest.__name__,
             family_version='0.1')
 

@@ -16,6 +16,7 @@ def get_signer(signer_key: BIP32Key) -> Signer:
 class AddressPrefix(Enum):
     GGO = 'GGO'
     MEASUREMENT = 'MEASUREMENT'
+    SETTLEMENT = 'SETTLEMENT'
 
 
 def generate_address(prefix: AddressPrefix, extended_key: BIP32Key) -> str:

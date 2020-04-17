@@ -22,7 +22,7 @@ class TransferGGORequest(AbstractRequest):
     def get_signed_transactions(self, batch_signer) -> List[Transaction]:
 
         ggo_address = generate_address(AddressPrefix.GGO, self.current_key)
-        new_address = generate_address(AddressPrefix.MEASUREMENT, self.new_key)
+        new_address = generate_address(AddressPrefix.GGO, self.new_key)
 
         request = LedgerTransferGGORequest(
             origin=ggo_address,

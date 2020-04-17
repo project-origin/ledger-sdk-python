@@ -19,7 +19,7 @@ measurement_schema = marshmallow_dataclass.class_schema(LedgerPublishMeasurement
 
 @dataclass
 class PublishMeasurementRequest(AbstractRequest):
-    extended_key: BIP32Key = field()
+    owner_key: BIP32Key = field()
     begin: datetime = field()
     end: datetime = field()
     sector: str = field()
@@ -29,7 +29,7 @@ class PublishMeasurementRequest(AbstractRequest):
 
     def get_signed_transactions(self, batch_signer) -> List[Transaction]:
 
-        address = generate_address(AddressPrefix.MEASUREMENT, self.extended_key)
+        address = generate_address(AddressPrefix.MEASUREMENT, self.owner_key)
 
         measurement = LedgerPublishMeasurementRequest(
             begin=self.begin,
@@ -37,7 +37,7 @@ class PublishMeasurementRequest(AbstractRequest):
             sector=self.sector,
             amount=self.amount,
             type=self.type,
-            key=self.extended_key.PublicKey().hex()
+            key=self.owner_key.PublicKey().hex()
             )    
 
         bytez = self._to_bytes(measurement_schema, measurement)
