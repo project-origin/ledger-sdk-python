@@ -1,3 +1,3 @@
-[submodule "src/origin_ledger/ledger_dto"]
-	path = src/origin_ledger/ledger_dto
+[submodule "src/origin_ledger_sdk/ledger_dto"]
+	path = src/origin_ledger_sdk/ledger_dto
 	url = https://github.com/project-origin/ledger-dto-python

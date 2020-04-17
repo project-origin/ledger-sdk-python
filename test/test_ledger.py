@@ -4,12 +4,12 @@ import unittest
 import random
 import string
 
-from datetime import datetime, timezone
+from datetime import datetime
 from bip32utils import BIP32Key
 
 from sawtooth_signing import create_context
 
-from src.origin_ledger import Ledger, Batch, BatchStatus, PublishMeasurementRequest, MeasurementType,IssueGGORequest, TransferGGORequest, SplitGGOPart, SplitGGORequest, RetireGGORequest
+from src.origin_ledger_sdk import Ledger, Batch, PublishMeasurementRequest, MeasurementType,IssueGGORequest, TransferGGORequest, SplitGGOPart, SplitGGORequest, RetireGGORequest
 
 
 def randomString(stringLength=32):
@@ -18,7 +18,7 @@ def randomString(stringLength=32):
     return ''.join(random.choice(letters) for i in range(stringLength))
 
 
-from src.origin_ledger.requests.helpers import get_signer
+from src.origin_ledger_sdk.requests.helpers import get_signer
 
 class TestLedger(unittest.TestCase):
 
@@ -71,14 +71,15 @@ class TestLedger(unittest.TestCase):
 
        
     def test_build_transfer_ggo_request(self):
-        key = BIP32Key.fromEntropy("bfdgafgaertaehtaha43514r<aefag".encode())
+        owner_key = BIP32Key.fromEntropy("bfdgafgaertaehtaha43514r<aefag".encode())
+        receipent_key = BIP32Key.fromEntropy("bfasdfasdfasdgasdgasdgqwerhrjnr".encode())
     
         request = TransferGGORequest(
-            current_key=key.ChildKey(1),
-            new_key=key.ChildKey(2),
+            current_key=owner_key,
+            new_key=receipent_key,
         )
 
-        batch = Batch(signer_key=key)
+        batch = Batch(signer_key=owner_key)
         batch.add_request(request)
         batch.get_signed_batch()
 
