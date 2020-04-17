@@ -6,7 +6,7 @@ with open('README.md', 'r') as fh:
 
 setup(
     name='Origin Ledger SDK',  
-    version='0.1',
+    version='0.1.1',
 
     description='A Docker and AWS utility package',
     long_description=long_description,
