@@ -10,8 +10,7 @@ from sawtooth_sdk.protobuf.batch_pb2 import BatchList
 from marshmallow_dataclass import class_schema
 
 from .batch import Batch, BatchStatus
-from .ledger_dto import Measurement, GGO
-from .requests import generate_address, AddressPrefix
+from .ledger_dto import Measurement, GGO, generate_address, AddressPrefix
 
 
 @dataclass
@@ -90,7 +89,7 @@ class Ledger():
 
 
     def get_measurement_from_key(self, key: BIP32Key) -> Measurement:
-        address = generate_address(AddressPrefix.MEASUREMENT, key)
+        address = generate_address(AddressPrefix.MEASUREMENT, key.PublicKey())
         return self.get_measurement_from_address(address)
 
 
@@ -106,7 +105,7 @@ class Ledger():
 
 
     def get_ggo_from_key(self, key: BIP32Key) -> GGO:
-        address = generate_address(AddressPrefix.GGO, key)
+        address = generate_address(AddressPrefix.GGO, key.PublicKey())
         return self.get_ggo_from_address(address)
 
 

@@ -5,4 +5,4 @@ from .requests import PublishMeasurementRequest, IssueGGORequest, SplitGGOPart, 
 from .batch import Batch, BatchStatus
 from .ledger_connector import Ledger
 
-from .ledger_dto import Measurement, GGO, MeasurementType
+from .ledger_dto import Measurement, GGO, MeasurementType, generate_address, AddressPrefix

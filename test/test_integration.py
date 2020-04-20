@@ -7,8 +7,7 @@ from datetime import datetime, timezone
 from bip32utils import BIP32Key
 from testcontainers.compose import DockerCompose
 
-
-from src.origin_ledger_sdk import Ledger, Batch, BatchStatus, MeasurementType, PublishMeasurementRequest, IssueGGORequest, TransferGGORequest, SplitGGORequest, SplitGGOPart, RetireGGORequest
+from src.origin_ledger_sdk import Ledger, Batch, BatchStatus, MeasurementType, PublishMeasurementRequest, IssueGGORequest, TransferGGORequest, SplitGGORequest, SplitGGOPart, RetireGGORequest, generate_address, AddressPrefix
 
 
 class TestIntegration(unittest.TestCase):
@@ -41,11 +40,16 @@ class TestIntegration(unittest.TestCase):
         user_1_masterkey = BIP32Key.fromEntropy("this_will_be_user_one_who_has_the_production_device".encode())
         user_2_masterkey = BIP32Key.fromEntropy("this_will_be_user_two_who_has_the_production_device".encode())
 
-        user_1_account = user_1_masterkey.ChildKey(1)
-        user_1_meter_1 = user_1_masterkey.ChildKey(2)
+        # Accounts is always 0.0
+        user_1_account = user_1_masterkey.ChildKey(0).ChildKey(0)
+        # Meatering points is always 1.n
+        user_1_meter_42 = user_1_masterkey.ChildKey(1).ChildKey(42)
 
-        user_2_account = user_2_masterkey.ChildKey(1)
-        user_2_meter_1 = user_2_masterkey.ChildKey(2)
+        
+        # Accounts is always 0.0
+        user_2_account = user_2_masterkey.ChildKey(0).ChildKey(0)
+        # Meatering points is always 1.n
+        user_2_meter_5 = user_2_masterkey.ChildKey(1).ChildKey(5)
 
 
         with DockerCompose("./test") as compose:
@@ -59,7 +63,8 @@ class TestIntegration(unittest.TestCase):
 
             # ----------- Publish and Issue ----------- 
             measurement_prod_request = PublishMeasurementRequest(
-                owner_key=user_1_meter_1.ChildKey(1),
+                                            
+                owner_key=user_1_meter_42.ChildKey(26429040), # Minutes since epoch
                 begin=datetime(2020, 4, 1, 12, tzinfo=timezone.utc),
                 end=datetime(2020, 4, 1, 13, tzinfo=timezone.utc),
                 sector='DK1',
@@ -68,7 +73,7 @@ class TestIntegration(unittest.TestCase):
             )
 
             measurement_con_request = PublishMeasurementRequest(
-                owner_key=user_2_meter_1.ChildKey(1),
+                owner_key=user_2_meter_5.ChildKey(26429040),
                 begin=datetime(2020, 4, 1, 12, tzinfo=timezone.utc),
                 end=datetime(2020, 4, 1, 13, tzinfo=timezone.utc),
                 sector='DK1',
@@ -77,7 +82,7 @@ class TestIntegration(unittest.TestCase):
             )
 
             issue_request = IssueGGORequest(
-                owner_key=user_1_meter_1.ChildKey(1),
+                owner_key=user_1_meter_42.ChildKey(26429040),
                 tech_type='T124124',
                 fuel_type='F12412'
             )
@@ -93,18 +98,18 @@ class TestIntegration(unittest.TestCase):
 
             # ----------- Trade the GGO ----------- 
             split_request = SplitGGORequest(
-                user_1_meter_1.ChildKey(1),
+                user_1_meter_42.ChildKey(26429040),
                 parts = [
                     SplitGGOPart(
-                        key=user_1_account.ChildKey(1),
+                        address=generate_address(AddressPrefix.GGO, user_1_account.ChildKey(1).PublicKey()),
                         amount=50
                     ),
                     SplitGGOPart(
-                        key=user_1_account.ChildKey(2),
+                        address=generate_address(AddressPrefix.GGO, user_1_account.ChildKey(2).PublicKey()),
                         amount=25
                     ),
                     SplitGGOPart(
-                        key=user_2_account.ChildKey(1),
+                        address=generate_address(AddressPrefix.GGO, user_2_account.ChildKey(1).PublicKey()),
                         amount=25
                     )
                 ]
@@ -118,8 +123,8 @@ class TestIntegration(unittest.TestCase):
 
             # ----------- Trade the GGO ----------- 
             transfer_request = TransferGGORequest(
-                user_1_account.ChildKey(2),
-                user_2_account.ChildKey(2)
+                current_key=user_1_account.ChildKey(2),
+                new_address=generate_address(AddressPrefix.GGO, user_2_account.ChildKey(2).PublicKey()),
             )
 
             batch = Batch(user_1_masterkey)
@@ -132,7 +137,7 @@ class TestIntegration(unittest.TestCase):
             # ----------- Retire GGO ----------- 
 
             retire_request = RetireGGORequest(
-                user_2_meter_1.ChildKey(1),
+                user_2_meter_5.ChildKey(26429040),
                 ggo_keys=[
                     user_2_account.ChildKey(1),
                     user_2_account.ChildKey(2)

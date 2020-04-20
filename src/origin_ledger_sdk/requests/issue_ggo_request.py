@@ -8,11 +8,11 @@ import marshmallow_dataclass
 from typing import List
 
 from .abstract_request import AbstractRequest
-from .helpers import generate_address, AddressPrefix
 
+from ..ledger_dto import generate_address, AddressPrefix
 from ..ledger_dto.requests import IssueGGORequest as LedgerIssueGGORequest
-issue_ggo_schema = marshmallow_dataclass.class_schema(LedgerIssueGGORequest)
 
+issue_ggo_schema = marshmallow_dataclass.class_schema(LedgerIssueGGORequest)
 
 @dataclass
 class IssueGGORequest(AbstractRequest):
@@ -22,15 +22,14 @@ class IssueGGORequest(AbstractRequest):
 
     def get_signed_transactions(self, batch_signer) -> List[Transaction]:
 
-        ggo_address = generate_address(AddressPrefix.GGO, self.owner_key)
-        measurement_address = generate_address(AddressPrefix.MEASUREMENT, self.owner_key)
+        ggo_address = generate_address(AddressPrefix.GGO, self.owner_key.PublicKey())
+        measurement_address = generate_address(AddressPrefix.MEASUREMENT, self.owner_key.PublicKey())
 
         request = LedgerIssueGGORequest(
             origin=measurement_address,
             destination=ggo_address,
             tech_type=self.tech_type,
-            fuel_type=self.fuel_type,
-            key=self.owner_key.PublicKey().hex())
+            fuel_type=self.fuel_type)
 
         byte_obj = self._to_bytes(issue_ggo_schema, request)
 

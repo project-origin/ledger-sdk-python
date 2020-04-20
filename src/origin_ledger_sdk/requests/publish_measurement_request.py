@@ -9,10 +9,8 @@ from typing import List
 from dataclasses import dataclass, field
 import marshmallow_dataclass
 
-from .helpers import generate_address, AddressPrefix
-
 from ..ledger_dto.requests import PublishMeasurementRequest as LedgerPublishMeasurementRequest
-from ..ledger_dto import MeasurementType
+from ..ledger_dto import MeasurementType, generate_address, AddressPrefix
 
 measurement_schema = marshmallow_dataclass.class_schema(LedgerPublishMeasurementRequest)
 
@@ -29,15 +27,14 @@ class PublishMeasurementRequest(AbstractRequest):
 
     def get_signed_transactions(self, batch_signer) -> List[Transaction]:
 
-        address = generate_address(AddressPrefix.MEASUREMENT, self.owner_key)
+        address = generate_address(AddressPrefix.MEASUREMENT, self.owner_key.PublicKey())
 
         measurement = LedgerPublishMeasurementRequest(
             begin=self.begin,
             end=self.end,
             sector=self.sector,
             amount=self.amount,
-            type=self.type,
-            key=self.owner_key.PublicKey().hex()
+            type=self.type
             )    
 
         bytez = self._to_bytes(measurement_schema, measurement)

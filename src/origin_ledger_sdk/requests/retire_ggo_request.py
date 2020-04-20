@@ -7,14 +7,15 @@ from bip32utils import BIP32Key
 from sawtooth_sdk.protobuf.transaction_pb2 import Transaction
 
 from .abstract_request import AbstractRequest
-from .helpers import get_signer, generate_address, AddressPrefix
+from .helpers import get_signer
 
+from ..ledger_dto import generate_address, AddressPrefix
 from ..ledger_dto.requests import RetireGGORequest as LedgerRetireGGORequest
-from ..ledger_dto.requests import SignedRetireGGOPart as LedgerSignedRetireGGOPart
-from ..ledger_dto.requests import RetireGGOPart as LedgerRetireGGOPart
+from ..ledger_dto.requests import SettlementRequest as LedgerSettlementRequest
 
 retire_ggo_schema = marshmallow_dataclass.class_schema(LedgerRetireGGORequest)
-signed_ggo_schema = marshmallow_dataclass.class_schema(LedgerSignedRetireGGOPart)
+settlment_schema = marshmallow_dataclass.class_schema(LedgerSettlementRequest)
+
 
 @dataclass
 class RetireGGORequest(AbstractRequest):
@@ -23,51 +24,56 @@ class RetireGGORequest(AbstractRequest):
 
     def get_signed_transactions(self, batch_signer) -> List[Transaction]:
 
-        settlement_address = generate_address(AddressPrefix.SETTLEMENT, self.measurement_key)
-        measurement_address = generate_address(AddressPrefix.MEASUREMENT, self.measurement_key)
-        
-        input_add = [settlement_address, measurement_address]
-        output_add = [settlement_address]
+        settlement_address = generate_address(AddressPrefix.SETTLEMENT, self.measurement_key.PublicKey())
+        measurement_address = generate_address(AddressPrefix.MEASUREMENT, self.measurement_key.PublicKey())
 
-        parts = []
+        signed_transaction = []
+        addresses = [settlement_address, measurement_address]
+        ggo_addresses = []
 
         for ggo_key in self.ggo_keys:
-            ggo_address = generate_address(AddressPrefix.GGO, ggo_key)
-            input_add.append(ggo_address)
-            output_add.append(ggo_address)
+            
+            ggo_address = generate_address(AddressPrefix.GGO, ggo_key.PublicKey())
 
-            ggo_signer = get_signer(ggo_key)
-
-            request = LedgerRetireGGOPart(
+            retire_request = LedgerRetireGGORequest(
                 origin=ggo_address,
                 settlement_address=settlement_address
             )
-            message = request.get_signature_bytes()
-            
-            parts.append(LedgerSignedRetireGGOPart(
-                content=request,
-                signature=ggo_signer.sign(message)
-            ))
 
-        request = LedgerRetireGGORequest(
-            measurement_address=measurement_address,
+            byte_obj = self._to_bytes(retire_ggo_schema, retire_request)
+
+            transaction = self.sign_transaction(
+                batch_signer=batch_signer,
+                transaction_signer=get_signer(ggo_key),
+                payload_bytes=byte_obj,
+                inputs=[ggo_address],
+                outputs=[ggo_address],
+                family_name=LedgerRetireGGORequest.__name__,
+                family_version='0.1')
+
+            addresses.append(ggo_address)
+            ggo_addresses.append(ggo_address)
+            signed_transaction.append(transaction)
+
+
+
+        request = LedgerSettlementRequest(
             settlement_address=settlement_address,
-            key=self.measurement_key.PublicKey().hex(),
-            parts=parts
-        )
+            measurement_address=measurement_address,
+            ggo_addresses=ggo_addresses)
 
-        transaction_signer = get_signer(self.measurement_key)
-        byte_obj = self._to_bytes(retire_ggo_schema, request)
 
-        signed_transaction = self.sign_transaction(
+        byte_obj = self._to_bytes(settlment_schema, request)
+
+        signed_transaction.append(self.sign_transaction(
             batch_signer=batch_signer,
-            transaction_signer=transaction_signer,
+            transaction_signer=get_signer(self.measurement_key),
             payload_bytes=byte_obj,
-            inputs=input_add,
-            outputs=output_add,
-            family_name=LedgerRetireGGORequest.__name__,
-            family_version='0.1')
+            inputs=addresses,
+            outputs=[settlement_address],
+            family_name=LedgerSettlementRequest.__name__,
+            family_version='0.1'))
 
-        return [signed_transaction]
+        return signed_transaction
 
 

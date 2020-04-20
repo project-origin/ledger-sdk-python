@@ -8,8 +8,9 @@ from bip32utils import BIP32Key
 from sawtooth_sdk.protobuf.transaction_pb2 import Transaction
 
 from .abstract_request import AbstractRequest
-from .helpers import get_signer, generate_address, AddressPrefix
+from .helpers import get_signer
 
+from ..ledger_dto import generate_address, AddressPrefix
 from ..ledger_dto.requests import SplitGGORequest as LedgerSplitGGORequest
 from ..ledger_dto.requests import SplitGGOPart as LedgerSplitGGOPart
 
@@ -17,7 +18,7 @@ split_ggo_schema = marshmallow_dataclass.class_schema(LedgerSplitGGORequest)
 
 @dataclass
 class SplitGGOPart():
-    key: BIP32Key = field()
+    address: str = field()
     amount: int = field()
 
 
@@ -28,21 +29,18 @@ class SplitGGORequest(AbstractRequest):
 
     def get_signed_transactions(self, batch_signer) -> List[Transaction]:
 
-        ggo_address = generate_address(AddressPrefix.GGO, self.current_key)
+        ggo_address = generate_address(AddressPrefix.GGO, self.current_key.PublicKey())
 
         addresses = [ggo_address]
         parts = []
 
         for part in self.parts:
-            part_address = generate_address(AddressPrefix.GGO, part.key)
-            
             ggo_part = LedgerSplitGGOPart(
-                address=part_address,
-                amount=part.amount,
-                key=part.key.PublicKey().hex()
+                address=part.address,
+                amount=part.amount
             )
 
-            addresses.append(part_address)
+            addresses.append(part.address)
             parts.append(ggo_part)
             
         request = LedgerSplitGGORequest(

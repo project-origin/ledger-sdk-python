@@ -9,7 +9,7 @@ from bip32utils import BIP32Key
 
 from sawtooth_signing import create_context
 
-from src.origin_ledger_sdk import Batch, PublishMeasurementRequest, MeasurementType,IssueGGORequest, TransferGGORequest, SplitGGOPart, SplitGGORequest, RetireGGORequest
+from src.origin_ledger_sdk import Batch, PublishMeasurementRequest, MeasurementType,IssueGGORequest, TransferGGORequest, SplitGGOPart, SplitGGORequest, RetireGGORequest, generate_address, AddressPrefix
 
 
 def randomString(stringLength=32):
@@ -74,10 +74,12 @@ class TestLedger(unittest.TestCase):
     def test_build_transfer_ggo_request(self):
         owner_key = BIP32Key.fromEntropy("bfdgafgaertaehtaha43514r<aefag".encode())
         receipent_key = BIP32Key.fromEntropy("bfasdfasdfasdgasdgasdgqwerhrjnr".encode())
+
+        receipient_add = generate_address(AddressPrefix.GGO, receipent_key.PublicKey())
     
         request = TransferGGORequest(
             current_key=owner_key,
-            new_key=receipent_key,
+            new_address=receipient_add,
         )
 
         batch = Batch(signer_key=owner_key)
@@ -89,11 +91,13 @@ class TestLedger(unittest.TestCase):
     def test_build_split_ggo_request(self):
         key = BIP32Key.fromEntropy("bfdgafgaertaehtaha43514r<aefag".encode())
   
+        
+
         request = SplitGGORequest(
             current_key=key.ChildKey(1),
             parts=[
-                SplitGGOPart(key=key.ChildKey(2), amount=124),
-                SplitGGOPart(key=key.ChildKey(3), amount=124)
+                SplitGGOPart(address=generate_address(AddressPrefix.GGO, key.ChildKey(2).PublicKey()), amount=124),
+                SplitGGOPart(address=generate_address(AddressPrefix.GGO, key.ChildKey(3).PublicKey()), amount=124)
             ]
         )
 

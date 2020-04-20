@@ -32,11 +32,11 @@ To execute a request one must first import the ledger, batch and a request type
 
 Next one can create a new TransferGGORequest, This request requires two keys as input.
 First key should be the private extended key that contains a GGO.
-Second should be the public key to transfer the GGO to.
+Second should be the address where the GGO must be transferred to.
     
     request = TransferGGORequest(
         current_key=owner_key,
-        new_key=receipent_key,
+        new_address=reciepient_address,
     )
 
 ## Batch
