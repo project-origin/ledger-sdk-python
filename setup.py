@@ -6,9 +6,9 @@ with open('README.md', 'r') as fh:
 
 setup(
     name='Origin Ledger SDK',  
-    version='0.1.2',
+    version='0.1.8',
 
-    description='A Docker and AWS utility package',
+    description='Project Origin ledger SDK',
     long_description=long_description,
     long_description_content_type='text/markdown',
     
@@ -25,6 +25,12 @@ setup(
         'Development Status :: 3 - Alpha',
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
-        'Operating System :: OS Independent',
+        'Operating System :: POSIX :: Linux',
+    ],
+    install_requires=[
+        'requests',
+        'sawtooth-sdk==1.2.3',
+        'marshmallow-dataclass',
+        'marshmallow-enum'
     ]
 )

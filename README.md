@@ -5,6 +5,14 @@ The goal of this repository is to create a simple and common way to interact wit
 
 This is work in progress, more documentation will be written as the project progresses.
 
+# Requirements
+
+The following four libraries are required to be installed.
+
+    pkg-config
+    libsecp256k1-dev
+    gcc
+    libzmq3-dev 
 
 # Keys
 
@@ -33,12 +41,8 @@ To execute a request one must first import the ledger, batch and a request type
 Next one can create a new TransferGGORequest, This request requires two keys as input.
 First key should be the private extended key that contains a GGO.
 Second should be the address where the GGO must be transferred to.
-    
-    request = TransferGGORequest(
-        current_key=owner_key,
-        new_address=reciepient_address,
-    )
 
+    
 ## Batch
 
 After the request has been created, we must create a batch using a another key.
@@ -83,4 +87,4 @@ To run the tests:
 # Push to pypi
 
     python3 setup.py bdist_wheel
-    python3 -m twine upload dist/*
+    python3 -m twine upload dist/* --repository project_origin

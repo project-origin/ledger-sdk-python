@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from bip32utils import BIP32Key
 from testcontainers.compose import DockerCompose
 
-from src.origin_ledger_sdk import Ledger, Batch, BatchStatus, MeasurementType, PublishMeasurementRequest, IssueGGORequest, TransferGGORequest, SplitGGORequest, SplitGGOPart, RetireGGORequest, generate_address, AddressPrefix
+from src.origin_ledger_sdk import Ledger, Batch, BatchStatus, MeasurementType, PublishMeasurementRequest, IssueGGORequest, TransferGGORequest, SplitGGORequest, SplitGGOPart, RetireGGORequest, generate_address, AddressPrefix, RetireGGOPart
 
 
 class TestIntegration(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestIntegration(unittest.TestCase):
     def wait_for_commit(self, ledger, handle):
         i = 0
         while True:
-            status = ledger.get_batch_status(handle).data[0].status
+            status = ledger.get_batch_status(handle).status
             
             if status == BatchStatus.COMMITTED:
                 break
@@ -62,9 +62,11 @@ class TestIntegration(unittest.TestCase):
             ledger = Ledger(url)
 
             # ----------- Publish and Issue ----------- 
+
+            measurement_prod_key = user_1_meter_42.ChildKey(26429040)
+            measurement_prod_address = generate_address(AddressPrefix.MEASUREMENT, measurement_prod_key.PublicKey())
             measurement_prod_request = PublishMeasurementRequest(
-                                            
-                owner_key=user_1_meter_42.ChildKey(26429040), # Minutes since epoch
+                address=measurement_prod_address,
                 begin=datetime(2020, 4, 1, 12, tzinfo=timezone.utc),
                 end=datetime(2020, 4, 1, 13, tzinfo=timezone.utc),
                 sector='DK1',
@@ -72,8 +74,11 @@ class TestIntegration(unittest.TestCase):
                 amount=100
             )
 
+
+            measurement_con_key = user_2_meter_5.ChildKey(26429040)
+            measurement_con_address = generate_address(AddressPrefix.MEASUREMENT, measurement_con_key.PublicKey())
             measurement_con_request = PublishMeasurementRequest(
-                owner_key=user_2_meter_5.ChildKey(26429040),
+                address=measurement_con_address,
                 begin=datetime(2020, 4, 1, 12, tzinfo=timezone.utc),
                 end=datetime(2020, 4, 1, 13, tzinfo=timezone.utc),
                 sector='DK1',
@@ -81,16 +86,19 @@ class TestIntegration(unittest.TestCase):
                 amount=50
             )
 
-            issue_request = IssueGGORequest(
-                owner_key=user_1_meter_42.ChildKey(26429040),
+
+            ggo_issue_address = generate_address(AddressPrefix.GGO, measurement_prod_key.PublicKey())
+            ggo_issue_request = IssueGGORequest(
+                measurement_address=measurement_prod_address,
+                ggo_address=ggo_issue_address,
                 tech_type='T124124',
                 fuel_type='F12412'
             )
 
-            batch = Batch(issuer_key)
+            batch = Batch(issuer_key.PrivateKey())
             batch.add_request(measurement_prod_request)
             batch.add_request(measurement_con_request)
-            batch.add_request(issue_request)
+            batch.add_request(ggo_issue_request)
             
             handle = ledger.execute_batch(batch)
             self.wait_for_commit(ledger, handle)
@@ -98,24 +106,25 @@ class TestIntegration(unittest.TestCase):
 
             # ----------- Trade the GGO ----------- 
             split_request = SplitGGORequest(
-                user_1_meter_42.ChildKey(26429040),
+                source_private_key=measurement_prod_key.PrivateKey(),
+                source_address=ggo_issue_address,
                 parts = [
                     SplitGGOPart(
-                        address=generate_address(AddressPrefix.GGO, user_1_account.ChildKey(1).PublicKey()),
+                        address=generate_address(AddressPrefix.GGO, user_1_account.ChildKey(0).PublicKey()),
                         amount=50
                     ),
                     SplitGGOPart(
-                        address=generate_address(AddressPrefix.GGO, user_1_account.ChildKey(2).PublicKey()),
+                        address=generate_address(AddressPrefix.GGO, user_1_account.ChildKey(1).PublicKey()),
                         amount=25
                     ),
                     SplitGGOPart(
-                        address=generate_address(AddressPrefix.GGO, user_2_account.ChildKey(1).PublicKey()),
+                        address=generate_address(AddressPrefix.GGO, user_2_account.ChildKey(0).PublicKey()),
                         amount=25
                     )
                 ]
             )
 
-            batch = Batch(user_1_masterkey)
+            batch = Batch(user_1_masterkey.PrivateKey())
             batch.add_request(split_request)
             
             handle = ledger.execute_batch(batch)
@@ -123,11 +132,13 @@ class TestIntegration(unittest.TestCase):
 
             # ----------- Trade the GGO ----------- 
             transfer_request = TransferGGORequest(
-                current_key=user_1_account.ChildKey(2),
-                new_address=generate_address(AddressPrefix.GGO, user_2_account.ChildKey(2).PublicKey()),
+                source_private_key=user_1_account.ChildKey(1).PrivateKey(),
+                source_address=generate_address(AddressPrefix.GGO, user_1_account.ChildKey(1).PublicKey()),
+
+                destination_address=generate_address(AddressPrefix.GGO, user_2_account.ChildKey(1).PublicKey()),
             )
 
-            batch = Batch(user_1_masterkey)
+            batch = Batch(user_1_masterkey.PrivateKey())
             batch.add_request(transfer_request)
             
             handle = ledger.execute_batch(batch)
@@ -136,15 +147,24 @@ class TestIntegration(unittest.TestCase):
 
             # ----------- Retire GGO ----------- 
 
+            settlement_address = generate_address(AddressPrefix.SETTLEMENT, measurement_con_key.PublicKey())
             retire_request = RetireGGORequest(
-                user_2_meter_5.ChildKey(26429040),
-                ggo_keys=[
-                    user_2_account.ChildKey(1),
-                    user_2_account.ChildKey(2)
+                settlement_address=settlement_address,
+                measurement_address=measurement_con_address,
+                measurement_private_key=measurement_con_key.PrivateKey(),
+                parts=[
+                    RetireGGOPart(
+                        address=generate_address(AddressPrefix.GGO, user_2_account.ChildKey(0).PublicKey()),
+                        private_key=user_2_account.ChildKey(0).PrivateKey()
+                    ),
+                    RetireGGOPart(
+                        address=generate_address(AddressPrefix.GGO, user_2_account.ChildKey(1).PublicKey()),
+                        private_key=user_2_account.ChildKey(1).PrivateKey()
+                    )
                 ]
             )
 
-            batch = Batch(user_2_masterkey)
+            batch = Batch(user_2_masterkey.PrivateKey())
             batch.add_request(retire_request)
             
             handle = ledger.execute_batch(batch)

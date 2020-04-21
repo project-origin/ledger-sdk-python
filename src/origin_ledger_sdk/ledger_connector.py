@@ -1,22 +1,31 @@
 import requests
 import base64
+import json
 import marshmallow_dataclass
 
-from bip32utils import BIP32Key
-# from enum import Enum
 from typing import List #, Optional
 from dataclasses import dataclass, field
 from sawtooth_sdk.protobuf.batch_pb2 import BatchList
 from marshmallow_dataclass import class_schema
 
 from .batch import Batch, BatchStatus
-from .ledger_dto import Measurement, GGO, generate_address, AddressPrefix
+from .ledger_dto import Measurement, GGO
+
+
+class LedgerException(Exception):
+    pass
 
 
 @dataclass
-class Handle():
-    link: str = field()
+class Error():
+    code: int = field()
+    message: str = field()
+    title: str = field()
 
+@dataclass
+class Handle():
+    link: str = field(default=None)
+    error: Error = field(default=None)
 
 @dataclass
 class Paging():
@@ -25,15 +34,21 @@ class Paging():
 
 
 @dataclass
-class BatchStatusResponseData():
+class InvalidTransaction():
     id: str = field()
-    invalid_transactions: List[str] = field()
-    status: BatchStatus = field()
+    message: str = field()
 
 
 @dataclass
 class BatchStatusResponse():
-    data: List[BatchStatusResponseData] = field()
+    id: str = field()
+    status: BatchStatus = field()
+    invalid_transactions: List[InvalidTransaction] = field(default=None)
+
+
+@dataclass
+class BatchStatusResponseHeader():
+    data: List[BatchStatusResponse] = field()
     link: str = field()
 
 
@@ -44,11 +59,11 @@ class StateResponse():
     link: str = field()
 
 
-handle_schema = marshmallow_dataclass.class_schema(Handle)
-batch_status_schema = marshmallow_dataclass.class_schema(BatchStatusResponse)
-state_response_schema = marshmallow_dataclass.class_schema(StateResponse)
-measurement_schema = class_schema(Measurement)
-ggo_schema = class_schema(GGO)
+handle_schema = marshmallow_dataclass.class_schema(Handle)()
+batch_status_schema = marshmallow_dataclass.class_schema(BatchStatusResponseHeader)()
+state_response_schema = marshmallow_dataclass.class_schema(StateResponse)()
+measurement_schema = class_schema(Measurement)()
+ggo_schema = class_schema(GGO)()
 
 
 class Ledger():
@@ -61,23 +76,34 @@ class Ledger():
         return self._send_batches([signed_batch])
 
 
-    def get_batch_status(self, handle: Handle) -> BatchStatusResponse:
-        response = requests.get(handle.link)
+    def get_batch_status(self, link: str) -> BatchStatusResponse:
+        response = requests.get(link)
 
         print("\nRESPONSE:", response.content, "\n\n")
 
-        return batch_status_schema().loads(response.content)
+        batch_status = batch_status_schema.loads(response.content)
+
+        return batch_status.data[0]
 
 
-    def _send_batches(self, signed_batches):
+    def _send_batches(self, signed_batches) -> str:
         batch_list_bytes = BatchList(batches=signed_batches).SerializeToString()
 
-        response = requests.post(
-            f'{self.url}/batches',
-            batch_list_bytes,
-            headers={'Content-Type': 'application/octet-stream'})
+        try:
+            response = requests.post(
+                f'{self.url}/batches',
+                batch_list_bytes,
+                headers={'Content-Type': 'application/octet-stream'})
 
-        return handle_schema().loads(response.content)
+            handle: Handle = handle_schema.loads(response.content)
+
+            if handle.error is not None:
+                raise LedgerException(f'Request to ledger is invalid: \ncode: "{handle.error.code}"\ntitle: "{handle.error.title}"\nmessage: "{handle.error.message}"')
+
+            return handle.link
+
+        except json.decoder.JSONDecodeError:
+            raise LedgerException(f'Invalid response from Ledger "{response.content.decode()}"')
 
 
     def _get_state(self, address) -> StateResponse:
@@ -85,36 +111,26 @@ class Ledger():
             f'{self.url}/state/{address}'
         )
 
-        return state_response_schema().loads(response.content)
+        return state_response_schema.loads(response.content)
 
 
-    def get_measurement_from_key(self, key: BIP32Key) -> Measurement:
-        address = generate_address(AddressPrefix.MEASUREMENT, key.PublicKey())
-        return self.get_measurement_from_address(address)
-
-
-    def get_measurement_from_address(self, address: str) -> Measurement:
+    def get_measurement(self, address: str) -> Measurement:
         response = self._get_state(address)
         
         body = base64.b64decode(response.data)
 
-        measurement = measurement_schema().loads(body)
+        measurement = measurement_schema.loads(body)
         measurement.address = address
 
         return measurement
 
 
-    def get_ggo_from_key(self, key: BIP32Key) -> GGO:
-        address = generate_address(AddressPrefix.GGO, key.PublicKey())
-        return self.get_ggo_from_address(address)
-
-
-    def get_ggo_from_address(self, address: str) -> GGO:
+    def get_ggo(self, address: str) -> GGO:
         response = self._get_state(address)
         
         body = base64.b64decode(response.data)
 
-        ggo = ggo_schema().loads(body)
+        ggo = ggo_schema.loads(body)
         ggo.address = address
 
         return ggo
