@@ -53,3 +53,13 @@ stages:
       
     - script: pytest -m integrationtest
       displayName: 'Run integration tests'
+
+    - script: python setup.py bdist_wheel
+      displayName: 'Create python package'
+
+    - task: TwineAuthenticate@1
+      inputs:
+        pythonUploadServiceConnection: pypi_sc
+
+    - script: python -m twine upload dist/*
+      displayName: 'Upload python package'
