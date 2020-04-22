@@ -61,5 +61,5 @@ stages:
       inputs:
         pythonUploadServiceConnection: pypi_sc
 
-    - script: python -m twine upload dist/* --repository project_origin
+    - script: python -m twine upload -r project_origin --config-file $(PYPIRC_PATH) dist/* 
       displayName: 'Upload python package'
