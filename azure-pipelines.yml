@@ -35,14 +35,17 @@ stages:
     - script: sudo apt install -y pkg-config gcc libsecp256k1-dev libzmq3-dev
       displayName: Install packages
 
-    - script: pip install --upgrade --user wheel setuptools pip pipenv
+    - script: pip install --upgrade setuptools pip pipenv
       displayName: 'Install pipenv'
 
-    - script: pipenv install
+    - script: python -m pipenv lock -r > requirements.txt
+      displayName: 'Create requirements.txt from pipenv'
+
+    - script: pip install -r requirements.txt
       displayName: 'Install requirements'
 
-    - script: pipenv run unittest -m unittest --cov-report=term-missing --cov-fail-under=95 --cov=src/origin_ledger_sdk/requests
+    - script: unittest -m unittest --cov-report=term-missing --cov-fail-under=95 --cov=src/origin_ledger_sdk/requests
       displayName: 'Run unit tests'
       
-    - script: pipenv run unittest -m integrationtest
+    - script: unittest -m integrationtest
       displayName: 'Run integration tests'
