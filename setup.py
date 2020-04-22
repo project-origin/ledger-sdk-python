@@ -6,7 +6,7 @@ with open('README.md', 'r') as fh:
 
 setup(
     name='Origin Ledger SDK',  
-    version='0.1.8',
+    version='0.1.9',
 
     description='Project Origin ledger SDK',
     long_description=long_description,
