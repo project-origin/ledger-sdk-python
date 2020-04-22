@@ -48,8 +48,8 @@ stages:
     - script: pip install -r requirements.txt
       displayName: 'Install requirements'
 
-    - script: unittest -m unittest --cov-report=term-missing --cov-fail-under=95 --cov=src/origin_ledger_sdk/requests
+    - script: pytest -m unittest --cov-report=term-missing --cov-fail-under=95 --cov=src/origin_ledger_sdk/requests
       displayName: 'Run unit tests'
       
-    - script: unittest -m integrationtest
+    - script: pytest -m integrationtest
       displayName: 'Run integration tests'
