@@ -21,6 +21,9 @@ stages:
     pool:
       vmImage: $(vmImageName)
     steps:
+    - script: git submodule update --init --recursive
+      displayName: Git get submodules
+
     - script: sudo mkdir /etc/sawtooth && sudo chmod 777 /etc/sawtooth &&
               sudo mkdir /var/lib/sawtooth && sudo chmod 777 /var/lib/sawtooth &&
               sudo mkdir /var/log/sawtooth && sudo chmod 777 /var/log/sawtooth
@@ -32,18 +35,13 @@ stages:
     - script: sudo apt install -y pkg-config gcc libsecp256k1-dev libzmq3-dev
       displayName: Install packages
 
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.7'
+    - script: pip install --upgrade setuptools pip pipenv
 
-    - script: python -m pip install -r requirements.txt
+    - script: pipenv install
       displayName: 'Install requirements'
 
-    - script: git submodule update --init --recursive
-      displayName: Git get submodules
-
-    - script: unittest -m unittest --cov-report=term-missing --cov-fail-under=95 --cov=src/origin_ledger_sdk/requests
+    - script: pipenv run unittest -m unittest --cov-report=term-missing --cov-fail-under=95 --cov=src/origin_ledger_sdk/requests
       displayName: 'Run unit tests'
       
-    - script: unittest -m integrationtest --cov-report=term-missing --cov-fail-under=95 --cov=src/origin_ledger_sdk/requests
+    - script: pipenv run unittest -m integrationtest --cov-report=term-missing --cov-fail-under=95 --cov=src/origin_ledger_sdk/requests
       displayName: 'Run integration tests'
