@@ -39,7 +39,7 @@ stages:
       inputs:
         versionSpec: '3.7'
 
-    - script: pip install --upgrade wheel setuptools pip pipenv
+    - script: pip install --upgrade twine wheel setuptools pip pipenv
       displayName: 'Install pipenv'
 
     - script: python -m pipenv lock -r > requirements.txt
