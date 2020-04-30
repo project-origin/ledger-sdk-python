@@ -72,15 +72,16 @@ ggo_schema = class_schema(GGO)()
 
 class Ledger(object):
 
-    def __init__(self, url):
+    def __init__(self, url, verify=True):
         self.url = url
+        self.verify = verify
 
     def execute_batch(self, batch: Batch) -> str:
         signed_batch = batch.get_signed_batch()
         return self._send_batches([signed_batch])
 
     def get_batch_status(self, link: str) -> BatchStatusResponse:
-        response = requests.get(link)
+        response = requests.get(link, verify=self.verify)
 
         print("\nRESPONSE:", response.content, "\n\n")
 
@@ -95,7 +96,8 @@ class Ledger(object):
             response = requests.post(
                 f'{self.url}/batches',
                 batch_list_bytes,
-                headers={'Content-Type': 'application/octet-stream'})
+                headers={'Content-Type': 'application/octet-stream'}, 
+                verify=self.verify)
 
             handle: Handle = handle_schema.loads(response.content)
 
@@ -109,7 +111,8 @@ class Ledger(object):
 
     def _get_state(self, address) -> StateResponse:
         response = requests.get(
-            f'{self.url}/state/{address}'
+            f'{self.url}/state/{address}', 
+            verify=self.verify
         )
 
         return state_response_schema.loads(response.content)
