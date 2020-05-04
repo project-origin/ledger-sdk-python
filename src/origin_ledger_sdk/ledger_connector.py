@@ -9,7 +9,7 @@ from sawtooth_sdk.protobuf.batch_pb2 import BatchList
 from marshmallow_dataclass import class_schema
 
 from .batch import Batch, BatchStatus
-from .ledger_dto import Measurement, GGO
+from .ledger_dto import Measurement, GGO, Settlement
 
 
 class LedgerException(Exception):
@@ -68,6 +68,7 @@ batch_status_schema = marshmallow_dataclass.class_schema(BatchStatusResponseHead
 state_response_schema = marshmallow_dataclass.class_schema(StateResponse)()
 measurement_schema = class_schema(Measurement)()
 ggo_schema = class_schema(GGO)()
+settlement_schema = class_schema(Settlement)()
 
 
 class Ledger(object):
@@ -133,3 +134,15 @@ class Ledger(object):
         ggo.address = address
 
         return ggo
+
+    
+    def get_settlement(self, address: str) -> Settlement:
+        response = self._get_state(address)
+        
+        body = base64.b64decode(response.data)
+
+        settlement = settlement_schema.loads(body)
+        settlement.address = address
+
+        return settlement
+
