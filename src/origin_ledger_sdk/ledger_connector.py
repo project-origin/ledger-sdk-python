@@ -58,9 +58,10 @@ class BatchStatusResponseHeader:
 
 @dataclass
 class StateResponse:
-    data: str = field()
-    head: str = field()
-    link: str = field()
+    data: str = field(default=None)
+    head: str = field(default=None)
+    link: str = field(default=None)
+    error: Error = field(default=None)
 
 
 handle_schema = marshmallow_dataclass.class_schema(Handle)()
@@ -84,8 +85,6 @@ class Ledger(object):
     def get_batch_status(self, link: str) -> BatchStatusResponse:
         response = requests.get(link, verify=self.verify)
 
-        print("\nRESPONSE:", response.content, "\n\n")
-
         batch_status = batch_status_schema.loads(response.content)
 
         return batch_status.data[0]
@@ -97,7 +96,7 @@ class Ledger(object):
             response = requests.post(
                 f'{self.url}/batches',
                 batch_list_bytes,
-                headers={'Content-Type': 'application/octet-stream'}, 
+                headers={'Content-Type': 'application/octet-stream'},
                 verify=self.verify)
 
             handle: Handle = handle_schema.loads(response.content)
@@ -112,7 +111,7 @@ class Ledger(object):
 
     def _get_state(self, address) -> StateResponse:
         response = requests.get(
-            f'{self.url}/state/{address}', 
+            f'{self.url}/state/{address}',
             verify=self.verify
         )
 
@@ -120,7 +119,7 @@ class Ledger(object):
 
     def get_measurement(self, address: str) -> Measurement:
         response = self._get_state(address)
-        
+
         body = base64.b64decode(response.data)
 
         measurement = measurement_schema.loads(body)
@@ -130,7 +129,7 @@ class Ledger(object):
 
     def get_ggo(self, address: str) -> GGO:
         response = self._get_state(address)
-        
+
         body = base64.b64decode(response.data)
 
         ggo = ggo_schema.loads(body)
@@ -138,14 +137,12 @@ class Ledger(object):
 
         return ggo
 
-    
     def get_settlement(self, address: str) -> Settlement:
         response = self._get_state(address)
-        
+
         body = base64.b64decode(response.data)
 
         settlement = settlement_schema.loads(body)
         settlement.address = address
 
         return settlement
-
