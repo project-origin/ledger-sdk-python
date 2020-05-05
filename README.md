@@ -14,6 +14,14 @@ The following four libraries are required to be installed.
     gcc
     libzmq3-dev 
 
+# Installation
+
+Pip package is available at: https://pypi.org/project/Origin-Ledger-SDK/
+
+Install from pip using:
+
+    pip install Origin-Ledger-SDK
+
 # Keys
 
 TODO: A whole section where there will be info on key management.
