@@ -64,7 +64,7 @@ class LedgerException(Exception):
         self.code = code
 
     @staticmethod
-    def from_error(error: Error):
+    def from_error(error: Error) -> LedgerException:
         return LedgerException(error.message, error.code)
 
 
