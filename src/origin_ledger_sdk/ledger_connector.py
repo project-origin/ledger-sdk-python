@@ -3,19 +3,13 @@ import base64
 import json
 import marshmallow_dataclass
 
-from typing import List #, Optional
+from typing import List
 from dataclasses import dataclass, field
 from sawtooth_sdk.protobuf.batch_pb2 import BatchList
 from marshmallow_dataclass import class_schema
 
 from .batch import Batch, BatchStatus
 from .ledger_dto import Measurement, GGO, Settlement
-
-
-class LedgerException(Exception):
-    def __init__(self, message, code=None):
-        super(LedgerException, self).__init__(message)
-        self.code = code
 
 
 @dataclass
@@ -64,6 +58,16 @@ class StateResponse:
     error: Error = field(default=None)
 
 
+class LedgerException(Exception):
+    def __init__(self, message, code=None):
+        super(LedgerException, self).__init__(message)
+        self.code = code
+
+    @staticmethod
+    def from_error(error: Error):
+        return LedgerException(error.message, error.code)
+
+
 handle_schema = marshmallow_dataclass.class_schema(Handle)()
 batch_status_schema = marshmallow_dataclass.class_schema(BatchStatusResponseHeader)()
 state_response_schema = marshmallow_dataclass.class_schema(StateResponse)()
@@ -102,7 +106,7 @@ class Ledger(object):
             handle: Handle = handle_schema.loads(response.content)
 
             if handle.error is not None:
-                raise LedgerException(handle.error.message, handle.error.code)
+                raise LedgerException.from_error(handle.error)
 
             return handle.link
 
@@ -120,6 +124,9 @@ class Ledger(object):
     def get_measurement(self, address: str) -> Measurement:
         response = self._get_state(address)
 
+        if response.error:
+            raise LedgerException.from_error(response.error)
+
         body = base64.b64decode(response.data)
 
         measurement = measurement_schema.loads(body)
@@ -130,6 +137,9 @@ class Ledger(object):
     def get_ggo(self, address: str) -> GGO:
         response = self._get_state(address)
 
+        if response.error:
+            raise LedgerException.from_error(response.error)
+
         body = base64.b64decode(response.data)
 
         ggo = ggo_schema.loads(body)
@@ -139,6 +149,9 @@ class Ledger(object):
 
     def get_settlement(self, address: str) -> Settlement:
         response = self._get_state(address)
+
+        if response.error:
+            raise LedgerException.from_error(response.error)
 
         body = base64.b64decode(response.data)
 
