@@ -46,8 +46,9 @@ class BatchStatusResponse:
 
 @dataclass
 class BatchStatusResponseHeader:
-    data: List[BatchStatusResponse] = field()
-    link: str = field()
+    data: List[BatchStatusResponse] = field(default=None)
+    link: str = field(default=None)
+    error: Error = field(default=None)
 
 
 @dataclass
@@ -90,6 +91,9 @@ class Ledger(object):
         response = requests.get(link, verify=self.verify)
 
         batch_status = batch_status_schema.loads(response.content)
+
+        if batch_status.error:
+            raise LedgerException.from_error(batch_status.error)
 
         return batch_status.data[0]
 
