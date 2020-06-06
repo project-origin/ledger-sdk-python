@@ -7,9 +7,19 @@ from typing import List
 
 class AbstractRequest(ABC):
 
+    dependencies = []
+
     @abstractmethod
     def get_signed_transactions(self, batch_signer) -> List[Transaction]:
         raise NotImplementedError
+
+
+    def get_header_signature(self):
+        return self.get_signed_transactions[-1].header_signature
+
+    
+    def add_dependency(self, request):
+        self.dependencies.append(request)
 
 
     def sign_transaction(self,
@@ -23,7 +33,7 @@ class AbstractRequest(ABC):
 
         header = TransactionHeader(
             batcher_public_key=batch_signer.get_public_key().as_hex(),
-            dependencies=[],
+            dependencies=[dep.get_header_signature() for dep in self.dependencies],
             family_name=family_name,
             family_version=family_version,
             inputs=inputs,
@@ -41,7 +51,7 @@ class AbstractRequest(ABC):
             payload=payload_bytes
         )
         
-        return [transaction]
+        return transaction
 
  
     def _to_bytes(self, schema, obj):
