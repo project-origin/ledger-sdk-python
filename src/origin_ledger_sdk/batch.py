@@ -25,7 +25,7 @@ class Batch():
 
     def get_signed_batch(self) -> SignedBatch:
         signer = get_signer(self._signer_private_key)
-        signed_transactions = [t for r in self._requests for tl in r.get_signed_transactions(signer) for t in tl ]
+        signed_transactions = [t for r in self._requests for t in r.get_signed_transactions(signer) ]
 
         batch_header_bytes = BatchHeader(
             signer_public_key=signer.get_public_key().as_hex(),
@@ -40,4 +40,3 @@ class Batch():
         )
 
         return batch
-
