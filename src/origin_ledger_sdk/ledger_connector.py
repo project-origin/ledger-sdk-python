@@ -69,6 +69,10 @@ class LedgerException(Exception):
         return LedgerException(error.message, error.code)
 
 
+class LedgerConnectionError(Exception):
+    pass
+
+
 handle_schema = marshmallow_dataclass.class_schema(Handle)()
 batch_status_schema = marshmallow_dataclass.class_schema(BatchStatusResponseHeader)()
 state_response_schema = marshmallow_dataclass.class_schema(StateResponse)()
@@ -88,7 +92,10 @@ class Ledger(object):
         return self._send_batches([signed_batch])
 
     def get_batch_status(self, link: str) -> BatchStatusResponse:
-        response = requests.get(link, verify=self.verify)
+        try:
+            response = requests.get(link, verify=self.verify)
+        except:
+            raise LedgerConnectionError('Failed to perform http GET to ledger')
 
         batch_status = batch_status_schema.loads(response.content)
 
@@ -102,26 +109,32 @@ class Ledger(object):
 
         try:
             response = requests.post(
-                f'{self.url}/batches',
-                batch_list_bytes,
+                url=f'{self.url}/batches',
+                data=batch_list_bytes,
                 headers={'Content-Type': 'application/octet-stream'},
-                verify=self.verify)
+                verify=self.verify,
+            )
+        except:
+            raise LedgerConnectionError('Failed to perform http POST to ledger')
 
+        try:
             handle: Handle = handle_schema.loads(response.content)
-
-            if handle.error is not None:
-                raise LedgerException.from_error(handle.error)
-
-            return handle.link
-
         except json.decoder.JSONDecodeError:
             raise LedgerException(f'Invalid response from Ledger "{response.content.decode()}"')
 
+        if handle.error is not None:
+            raise LedgerException.from_error(handle.error)
+
+        return handle.link
+
     def _get_state(self, address) -> StateResponse:
-        response = requests.get(
-            f'{self.url}/state/{address}',
-            verify=self.verify
-        )
+        try:
+            response = requests.get(
+                url=f'{self.url}/state/{address}',
+                verify=self.verify
+            )
+        except:
+            raise LedgerConnectionError('Failed to perform http GET to ledger')
 
         return state_response_schema.loads(response.content)
 
