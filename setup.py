@@ -1,12 +1,17 @@
 
+import subprocess
 from setuptools import setup, find_packages
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
 
+version_output = subprocess.check_output(['git', 'describe', '--tags', '--long']).strip().decode()
+version_parts = version_output.split('-')
+version = f'{version_parts[0]}.{version_parts[1]}'
+
 setup(
     name='Origin Ledger SDK',
-    version='0.1.20',
+    version=version,
 
     description='Project Origin ledger SDK',
     long_description=long_description,
