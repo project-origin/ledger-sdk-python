@@ -2,7 +2,7 @@ version: '3'
 services:
 
   datahub-tp:
-    image: projectorigin/ledger_tp:latest
+    image: projectorigin/ledger-tp:latest
     container_name: datahub-tp
     depends_on:
       - validator
