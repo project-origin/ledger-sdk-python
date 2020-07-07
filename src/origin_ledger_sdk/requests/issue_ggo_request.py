@@ -1,8 +1,6 @@
-
-
 import marshmallow_dataclass
 
-from typing import List
+from typing import List, Dict
 from dataclasses import dataclass, field
 from sawtooth_sdk.protobuf.transaction_pb2 import Transaction
 
@@ -10,7 +8,9 @@ from .abstract_request import AbstractRequest
 
 from ..ledger_dto.requests import IssueGGORequest as LedgerIssueGGORequest
 
+
 issue_ggo_schema = marshmallow_dataclass.class_schema(LedgerIssueGGORequest)
+
 
 @dataclass
 class IssueGGORequest(AbstractRequest):
@@ -19,6 +19,7 @@ class IssueGGORequest(AbstractRequest):
     :param str ggo_address: The address where to issue the GGO.
     :param str tech_type: The technology type of the GGO. 'T020001' is 'Onshore Wind'
     :param str fuel_type: The fuel type of the GGO. 'F01050100' is 'Mechanical wind'
+    :param Dict emissions: Emission data for the GGO.
 
     The tech_type and fuel_type follows AIB fact sheet 5:
     https://www.aib-net.org/sites/default/files/assets/eecs/facts-sheets/AIB-2019-EECSFS-05%20EECS%20Rules%20Fact%20Sheet%2005%20-%20Types%20of%20Energy%20Inputs%20and%20Technologies%20-%20Release%207.7%20v5.pdf
@@ -28,6 +29,7 @@ class IssueGGORequest(AbstractRequest):
     ggo_address: str = field()
     tech_type: str = field()
     fuel_type: str = field()
+    emissions: Dict[str, str] = field(default=None)
 
     def get_signed_transactions(self, batch_signer) -> List[Transaction]:
 
@@ -35,7 +37,9 @@ class IssueGGORequest(AbstractRequest):
             origin=self.measurement_address,
             destination=self.ggo_address,
             tech_type=self.tech_type,
-            fuel_type=self.fuel_type)
+            fuel_type=self.fuel_type,
+            emissions=self.emissions,
+        )
 
         byte_obj = self._to_bytes(issue_ggo_schema, request)
 
