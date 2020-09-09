@@ -48,11 +48,11 @@ stages:
     - script: pip install -r requirements.txt
       displayName: 'Install requirements'
 
-#    - script: pytest -m unittest --cov-report=term-missing --cov-fail-under=95 --cov=src/origin_ledger_sdk/requests
-#      displayName: 'Run unit tests'
-#
-#    - script: pytest -m integrationtest
-#      displayName: 'Run integration tests'
+    - script: pytest -m unittest --cov-report=term-missing --cov-fail-under=95 --cov=src/origin_ledger_sdk/requests
+      displayName: 'Run unit tests'
+
+    - script: pytest -m integrationtest
+      displayName: 'Run integration tests'
 
     - script: python setup.py bdist_wheel
       displayName: 'Create python package'
